@@ -36,3 +36,6 @@ public class MyEvent extends Event {
     
 }
 ```
+
+
+![lgpl logo](https://www.gnu.org/graphics/lgplv3-147x51.png)
