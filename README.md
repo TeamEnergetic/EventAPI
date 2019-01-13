@@ -13,18 +13,21 @@ Here are some simple examples. For more advanced usage, consult the code.
 
 ```java
 public class EventAPIExample {
-    private final EventManager eventManager = new EventManager();
+    private final EventManager<Event> eventManager = new EventManager<>(Event.class);
     
     public void registerEvents() {
         this.eventManager.registerListener(new ListenerExample());
     }
     
     public void callSomeEvents() {
-        this.eventManager.fireEvent(new MyEvent());
+        MyEvent returned = this.eventManager.fireEvent(new MyEvent());
+        if (returned.isCancelled()) {
+            // do some behaviour
+        }
     }
 }
 
-public class ListenerExample implements Listener {
+public class ListenerExample {
     // Handle an event
     @EventHandler
     public void onMyEvent(MyEvent evt) {
