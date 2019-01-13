@@ -150,6 +150,7 @@ public final class EventManager<T> {
         this.persistentCache.put(listener, persistentSet);
         this.nonPersistentCache.put(listener, nonPersistentSet);
 
+        int methodIndex = 0;
         for (Method method : listener.getClass().getDeclaredMethods()) {
             if ((method.getParameterCount() == 1 || (method.getParameterCount() == 2 && EventTiming.class.isAssignableFrom(method.getParameterTypes()[1])))
                     && method.isAnnotationPresent(EventHandler.class) && this.BASE_CLASS.isAssignableFrom(method.getParameterTypes()[0])) {
@@ -165,16 +166,17 @@ public final class EventManager<T> {
                     NavigableSet<HandlerEncapsulator<T>> preSet = this.getOrCreateNavigableSet(this.eventEncapsulatorMap.get(EventTiming.PRE), eventClass);
                     NavigableSet<HandlerEncapsulator<T>> postSet = this.getOrCreateNavigableSet(this.eventEncapsulatorMap.get(EventTiming.POST), eventClass);
 
-                    encapsulator = new HandlerEncapsulatorWithTiming<>(listener, method, eventHandler.priority(), preSet, postSet);
+                    encapsulator = new HandlerEncapsulatorWithTiming<>(listener, method, methodIndex, eventHandler.priority(), preSet, postSet);
                 } else {
                     NavigableSet<HandlerEncapsulator<T>> navigableSet = this.getOrCreateNavigableSet(this.eventEncapsulatorMap.get(eventHandler.timing()), eventClass);
 
-                    encapsulator = new HandlerEncapsulator<>(listener, method, eventHandler.priority(), navigableSet);
+                    encapsulator = new HandlerEncapsulator<>(listener, method, methodIndex, eventHandler.priority(), navigableSet);
                 }
 
                 Set<HandlerEncapsulator<T>> encapsulatorSet = eventHandler.persistent() ? persistentSet : nonPersistentSet;
                 encapsulatorSet.add(encapsulator);
             }
+            methodIndex++;
         }
         this.eventProfiler.postListenerDiscovery(listener);
     }

@@ -32,8 +32,8 @@ public class HandlerEncapsulatorWithTiming<T> extends HandlerEncapsulator<T> {
      * @param preParentSet the set of all encapsulators with timing {@link EventTiming#PRE} that contains this {@link HandlerEncapsulatorWithTiming}
      * @param postParentSet the set of all encapsulators with timing {@link EventTiming#POST} that contains this {@link HandlerEncapsulatorWithTiming}
      */
-    public HandlerEncapsulatorWithTiming(Object listener, Method method, EventPriority priority, NavigableSet<HandlerEncapsulator<T>> preParentSet, NavigableSet<HandlerEncapsulator<T>> postParentSet) {
-        super(listener, method, priority, preParentSet);
+    public HandlerEncapsulatorWithTiming(Object listener, Method method, int methodIndex, EventPriority priority, NavigableSet<HandlerEncapsulator<T>> preParentSet, NavigableSet<HandlerEncapsulator<T>> postParentSet) {
+        super(listener, method, methodIndex, priority, preParentSet);
 
         this.postParentSet = postParentSet;
     }

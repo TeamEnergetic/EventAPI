@@ -52,15 +52,15 @@ public class HandlerEncapsulator<T> {
      * @param priority the priority of this {@link HandlerEncapsulator}, relative to other encapsulators in the {@link #parentSet}
      * @param parentSet the set of all encapsulators that contains this {@link HandlerEncapsulator}
      */
-    public HandlerEncapsulator(Object listener, Method method, EventPriority priority, NavigableSet<HandlerEncapsulator<T>> parentSet) {
+    public HandlerEncapsulator(Object listener, Method method, int methodIndex, EventPriority priority, NavigableSet<HandlerEncapsulator<T>> parentSet) {
         this.listener = listener;
         this.method = method;
         this.priority = priority;
         this.parentSet = parentSet;
+        this.methodIndex = methodIndex;
         method.setAccessible(true);
 
         this.methodAccess = MethodAccess.get(this.listener.getClass());
-        this.methodIndex = this.methodAccess.getIndex(this.method.getName());
     }
 
     /**
