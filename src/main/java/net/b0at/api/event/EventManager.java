@@ -10,6 +10,7 @@ import net.b0at.api.event.types.EventPriority;
 import net.b0at.api.event.types.EventTiming;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -152,6 +153,9 @@ public final class EventManager<T> {
 
         int methodIndex = 0;
         for (Method method : listener.getClass().getDeclaredMethods()) {
+            if ((method.getModifiers() & Modifier.PRIVATE) != 0) {
+                continue;
+            }
             if ((method.getParameterCount() == 1 || (method.getParameterCount() == 2 && EventTiming.class.isAssignableFrom(method.getParameterTypes()[1])))
                     && method.isAnnotationPresent(EventHandler.class) && this.BASE_CLASS.isAssignableFrom(method.getParameterTypes()[0])) {
                 boolean includesTimingParam = method.getParameterCount() == 2;
