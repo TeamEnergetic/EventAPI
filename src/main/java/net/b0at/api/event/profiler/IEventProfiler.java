@@ -23,15 +23,19 @@ public interface IEventProfiler<T> {
      * Invoked when a {@code listener} is registered.
      *
      * @param listener the instance of the {@code listener} that has been registered
+     * @param onlyAddPersistent if this is TRUE, only {@link EventHandler#persistent()} were registered,
+     *                          if this is FALSE, only non {@link EventHandler#persistent()} were registered
      */
-    default void onRegisterListener(Object listener) { }
+    default void onRegisterListener(Object listener, boolean onlyAddPersistent) { }
 
     /**
      * Invoked when a {@code listener} is deregistered.
      *
      * @param listener the instance of the {@code listener} that has been deregistered
+     * @param onlyRemovePersistent  if this is TRUE, only {@link EventHandler#persistent()} were deregistered,
+     *                              if this is FALSE, only non {@link EventHandler#persistent()} were deregistered
      */
-    default void onDeregisterListener(Object listener) { }
+    default void onDeregisterListener(Object listener, boolean onlyRemovePersistent) { }
 
     /**
      * Invoked before a {@code listener} is searched for {@link EventHandler}'s for the first time.

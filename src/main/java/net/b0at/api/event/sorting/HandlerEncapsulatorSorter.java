@@ -6,6 +6,7 @@ import net.b0at.api.event.types.EventPriority;
 
 import java.util.Comparator;
 import java.util.NavigableSet;
+import java.util.Objects;
 
 /**
  * The {@link Comparator} used to sort {@link HandlerEncapsulator}s based on their {@link EventPriority}.
@@ -22,13 +23,17 @@ public class HandlerEncapsulatorSorter<T> implements Comparator<HandlerEncapsula
      *
      * @param a the first {@link HandlerEncapsulator} used in the comparison
      * @param b the second {@link HandlerEncapsulator} used in the comparison
-     * @return 0 if these {@link HandlerEncapsulator}s (to ensure uniqueness), 1 if {@code a} has a lower priority than {@code b}, -1 otherwise
+     * @return 0 if these {@link HandlerEncapsulator}s are the equal (to ensure uniqueness), 1 if {@code a} has a lower priority than {@code b},
+     * -1 if {@code a} has a higher priority than {@code b}, otherwise, compare {@link HandlerEncapsulator#hashCode()}
      */
     @Override
     public int compare(HandlerEncapsulator<T> a, HandlerEncapsulator<T> b) {
         // ensure the GENERAL CONTRACT is always upheld to the highest standard
-        if (a == b)
+        if (Objects.equals(a, b))
             return 0;
+
+        if (a.getPriority().ordinal() == b.getPriority().ordinal())
+            return Integer.compare(a.hashCode(), b.hashCode());
 
         if (a.getPriority().ordinal() > b.getPriority().ordinal())
             return 1;

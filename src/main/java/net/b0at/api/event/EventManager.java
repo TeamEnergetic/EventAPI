@@ -48,6 +48,13 @@ public final class EventManager<T> {
     protected Map<EventTiming, Map<Class<? extends T>, NavigableSet<HandlerEncapsulator<T>>>> eventEncapsulatorMap = new HashMap<>();
 
     /**
+     * The cache indicating if a {@code listener} has been discovered
+     *
+     * @see #discoverEventHandlers(Object)
+     */
+    private Set<Object> discoveredListeners = new HashSet<>();
+
+    /**
      * The cache indicating if the {@link EventHandler#persistent()} handlers are registered (TRUE) or not (FALSE OR NULL).
      */
     private Map<Object, Boolean> listenerPersistentStates = new HashMap<>();
@@ -104,18 +111,18 @@ public final class EventManager<T> {
             throw new ListenerAlreadyRegisteredException(listener);
         }
 
-        if (state == null) {
-            this.scanListenerForEventHandlers(listener);
+        if (!this.discoveredListeners.contains(listener)) {
+            this.discoverEventHandlers(listener);
         }
 
         listenerStates.put(listener, Boolean.TRUE);
-        this.eventProfiler.onRegisterListener(listener);
 
         Set<HandlerEncapsulator<T>> encapsulatorSet = onlyAddPersistent ? this.persistentCache.get(listener) : this.nonPersistentCache.get(listener);
         for (HandlerEncapsulator<T> encapsulator : encapsulatorSet) {
             encapsulator.setEnabled(true);
         }
         this.registeredListenerCount += encapsulatorSet.size();
+        this.eventProfiler.onRegisterListener(listener, onlyAddPersistent);
     }
 
     /**
@@ -126,7 +133,7 @@ public final class EventManager<T> {
      * @param listener the instance of the {@code listener} to register
      * @throws ListenerAlreadyRegisteredException if this instance of a {@code listener} is already registered
      */
-    public void registerListener(Object listener) throws ListenerAlreadyRegisteredException{
+    public void registerListener(Object listener) throws ListenerAlreadyRegisteredException {
         this.registerListener(listener, false);
     }
 
@@ -138,16 +145,18 @@ public final class EventManager<T> {
      * in {@link #persistentCache} and {@link #nonPersistentCache} respectively.
      * </p>
      *
+     * @see #discoveredListeners
      * @see #persistentCache
      * @see #nonPersistentCache
      *
      * @param listener the instance of the {@code listener} to scan for {@link EventHandler}s
      */
-    private void scanListenerForEventHandlers(Object listener) {
+    private void discoverEventHandlers(Object listener) {
         this.eventProfiler.preListenerDiscovery(listener);
         Set<HandlerEncapsulator<T>> persistentSet = new HashSet<>();
         Set<HandlerEncapsulator<T>> nonPersistentSet = new HashSet<>();
 
+        this.discoveredListeners.add(listener);
         this.persistentCache.put(listener, persistentSet);
         this.nonPersistentCache.put(listener, nonPersistentSet);
 
@@ -228,12 +237,12 @@ public final class EventManager<T> {
         }
 
         listenerStates.put(listener, Boolean.FALSE);
-        this.eventProfiler.onDeregisterListener(listener);
         Set<HandlerEncapsulator<T>> encapsulatorSet = onlyRemovePersistent ? this.persistentCache.get(listener) : this.nonPersistentCache.get(listener);
         for (HandlerEncapsulator<T> encapsulator : encapsulatorSet) {
             encapsulator.setEnabled(false);
         }
         this.registeredListenerCount -= encapsulatorSet.size();
+        this.eventProfiler.onDeregisterListener(listener, onlyRemovePersistent);
     }
 
     /**
@@ -281,6 +290,7 @@ public final class EventManager<T> {
         this.eventEncapsulatorMap.get(EventTiming.PRE).clear();
         this.eventEncapsulatorMap.get(EventTiming.POST).clear();
 
+        this.discoveredListeners.clear();
         this.listenerPersistentStates.clear();
         this.listenerNonPersistentStates.clear();
         this.persistentCache.clear();

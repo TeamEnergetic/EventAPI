@@ -5,6 +5,7 @@ import net.b0at.api.event.types.EventTiming;
 
 import java.lang.reflect.Method;
 import java.util.NavigableSet;
+import java.util.Objects;
 
 /**
  * An encapsulator for a method denoted by {@code EventHandler}, holding the necessary information to invoke the {@link #listener}'s {@link #method}.
@@ -28,6 +29,7 @@ public class HandlerEncapsulatorWithTiming<T> extends HandlerEncapsulator<T> {
      *
      * @param listener the object representing the instance of the {@code listener}
      * @param method the method in the {@link #listener} that will be invoked
+     * @param methodIndex the ASM method index for the {@code listener}'s {@code method}
      * @param priority the priority of this encapsulator, relative to other encapsulators in the {@link #parentSet}
      * @param preParentSet the set of all encapsulators with timing {@link EventTiming#PRE} that contains this {@link HandlerEncapsulatorWithTiming}
      * @param postParentSet the set of all encapsulators with timing {@link EventTiming#POST} that contains this {@link HandlerEncapsulatorWithTiming}
@@ -74,6 +76,21 @@ public class HandlerEncapsulatorWithTiming<T> extends HandlerEncapsulator<T> {
         }
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (obj.getClass() == HandlerEncapsulatorWithTiming.class) {
+            HandlerEncapsulatorWithTiming other = (HandlerEncapsulatorWithTiming) obj;
+
+            return Objects.equals(this.method, other.method) && Objects.equals(this.listener, other.listener);
+        }
+        return false;
+    }
     @Override
     public String toString() {
         return String.format("%s@%s#%s@%s(%s, EventPriority priority)",
