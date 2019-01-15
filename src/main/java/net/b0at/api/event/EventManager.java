@@ -45,7 +45,7 @@ public final class EventManager<T> {
      *
      * @see #ENCAPSULATOR_SORTER
      */
-    protected Map<EventTiming, Map<Class<? extends T>, NavigableSet<HandlerEncapsulator<T>>>> eventEncapsulatorMap = new HashMap<>();
+    private Map<EventTiming, Map<Class<? extends T>, NavigableSet<HandlerEncapsulator<T>>>> eventEncapsulatorMap = new HashMap<>();
 
     /**
      * The cache indicating if a {@code listener} has been discovered
@@ -82,7 +82,7 @@ public final class EventManager<T> {
     /**
      * The event base class of this {@link EventManager}, typically <i>{@link Event}.class</i> or <i>{@link Object}.class</i>.
      */
-    protected final Class<T> BASE_CLASS;
+    private final Class<T> BASE_CLASS;
 
     /**
      * Constructs a new {@link EventManager} with {@code BASE_CLASS} as the event base class.
@@ -161,36 +161,43 @@ public final class EventManager<T> {
         this.nonPersistentCache.put(listener, nonPersistentSet);
 
         int methodIndex = 0;
-        for (Method method : listener.getClass().getDeclaredMethods()) {
-            if ((method.getModifiers() & Modifier.PRIVATE) != 0) {
-                continue;
-            }
-            if ((method.getParameterCount() == 1 || (method.getParameterCount() == 2 && EventTiming.class.isAssignableFrom(method.getParameterTypes()[1])))
-                    && method.isAnnotationPresent(EventHandler.class) && this.BASE_CLASS.isAssignableFrom(method.getParameterTypes()[0])) {
-                boolean includesTimingParam = method.getParameterCount() == 2;
+        Class<?> clazz = listener.getClass();
 
-                @SuppressWarnings("unchecked")
-                Class<? extends T> eventClass = (Class<? extends T>) method.getParameterTypes()[0];
-                EventHandler eventHandler = method.getAnnotation(EventHandler.class);
-
-                HandlerEncapsulator<T> encapsulator;
-
-                if (includesTimingParam) {
-                    NavigableSet<HandlerEncapsulator<T>> preSet = this.getOrCreateNavigableSet(this.eventEncapsulatorMap.get(EventTiming.PRE), eventClass);
-                    NavigableSet<HandlerEncapsulator<T>> postSet = this.getOrCreateNavigableSet(this.eventEncapsulatorMap.get(EventTiming.POST), eventClass);
-
-                    encapsulator = new HandlerEncapsulatorWithTiming<>(listener, method, methodIndex, eventHandler.priority(), preSet, postSet);
-                } else {
-                    NavigableSet<HandlerEncapsulator<T>> navigableSet = this.getOrCreateNavigableSet(this.eventEncapsulatorMap.get(eventHandler.timing()), eventClass);
-
-                    encapsulator = new HandlerEncapsulator<>(listener, method, methodIndex, eventHandler.priority(), navigableSet);
+        while (clazz != Object.class) {
+            for (Method method : clazz.getDeclaredMethods()) {
+                if ((method.getModifiers() & Modifier.PRIVATE) != 0) {
+                    continue;
                 }
+                if ((method.getParameterCount() == 1 || (method.getParameterCount() == 2 && EventTiming.class.isAssignableFrom(method.getParameterTypes()[1])))
+                        && method.isAnnotationPresent(EventHandler.class) && this.BASE_CLASS.isAssignableFrom(method.getParameterTypes()[0])) {
+                    boolean includesTimingParam = method.getParameterCount() == 2;
 
-                Set<HandlerEncapsulator<T>> encapsulatorSet = eventHandler.persistent() ? persistentSet : nonPersistentSet;
-                encapsulatorSet.add(encapsulator);
+                    @SuppressWarnings("unchecked")
+                    Class<? extends T> eventClass = (Class<? extends T>) method.getParameterTypes()[0];
+                    EventHandler eventHandler = method.getAnnotation(EventHandler.class);
+
+                    HandlerEncapsulator<T> encapsulator;
+
+                    if (includesTimingParam) {
+                        NavigableSet<HandlerEncapsulator<T>> preSet = this.getOrCreateNavigableSet(this.eventEncapsulatorMap.get(EventTiming.PRE), eventClass);
+                        NavigableSet<HandlerEncapsulator<T>> postSet = this.getOrCreateNavigableSet(this.eventEncapsulatorMap.get(EventTiming.POST), eventClass);
+
+                        encapsulator = new HandlerEncapsulatorWithTiming<>(listener, method, methodIndex, eventHandler.priority(), preSet, postSet);
+                    } else {
+                        NavigableSet<HandlerEncapsulator<T>> navigableSet = this.getOrCreateNavigableSet(this.eventEncapsulatorMap.get(eventHandler.timing()), eventClass);
+
+                        encapsulator = new HandlerEncapsulator<>(listener, method, methodIndex, eventHandler.priority(), navigableSet);
+                    }
+
+                    Set<HandlerEncapsulator<T>> encapsulatorSet = eventHandler.persistent() ? persistentSet : nonPersistentSet;
+                    encapsulatorSet.add(encapsulator);
+                }
+                methodIndex++;
             }
-            methodIndex++;
+
+            clazz = clazz.getSuperclass();
         }
+
         this.eventProfiler.postListenerDiscovery(listener);
     }
 
@@ -206,7 +213,7 @@ public final class EventManager<T> {
      * @param eventClass the {@link Class} to look up in the {@code encapsulatorMap}
      * @return the created or retrieved {@link NavigableSet} from the {@code encapsulatorMap}
      */
-    protected NavigableSet<HandlerEncapsulator<T>> getOrCreateNavigableSet(Map<Class<? extends T>, NavigableSet<HandlerEncapsulator<T>>> encapsulatorMap, Class<? extends T> eventClass) {
+    private NavigableSet<HandlerEncapsulator<T>> getOrCreateNavigableSet(Map<Class<? extends T>, NavigableSet<HandlerEncapsulator<T>>> encapsulatorMap, Class<? extends T> eventClass) {
         NavigableSet<HandlerEncapsulator<T>> navigableSet = encapsulatorMap.get(eventClass);
 
         if (navigableSet == null) {
