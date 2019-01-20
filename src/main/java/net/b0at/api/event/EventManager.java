@@ -13,6 +13,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.function.Consumer;
 
 /**
  * The main class that handles {@link EventHandler} (de)registration and {@code event} firing.
@@ -78,6 +79,13 @@ public final class EventManager<T> {
      * The number of {@link Method}s currently registered to receive events of all types.
      */
     private int registeredListenerCount = 0;
+
+    /**
+     * The active {@code exception hook} for this {@link EventManager}.
+     *
+     * @see #setExceptionHook(Consumer)
+     */
+    private Consumer<Exception> exceptionHook;
 
     /**
      * The event base class of this {@link EventManager}, typically <i>{@link Event}.class</i> or <i>{@link Object}.class</i>.
@@ -362,7 +370,14 @@ public final class EventManager<T> {
             this.eventProfiler.preFireEvent(event, timing, encapsulatorSet);
 
             for (HandlerEncapsulator<T> encapsulator : encapsulatorSet) {
-                encapsulator.invoke(event, timing);
+                try {
+                    encapsulator.invoke(event, timing);
+                } catch (Exception e) {
+                    if (this.exceptionHook == null) {
+                        throw e;
+                    }
+                    this.exceptionHook.accept(e);
+                }
             }
 
             this.eventProfiler.postFireEvent(event, timing, encapsulatorSet);
@@ -378,5 +393,18 @@ public final class EventManager<T> {
      */
     public void setEventProfiler(IEventProfiler<T> eventProfiler) {
         this.eventProfiler = eventProfiler;
+    }
+
+    /**
+     * Set the current exception hook for this {@link EventManager}.
+     *
+     * <p>
+     * This {@link Consumer} will receive all exceptions raised in the execution of an event.
+     * </p>
+     *
+     * @param exceptionHook the new {@link Consumer} to receive exceptions
+     */
+    public void setExceptionHook(Consumer<Exception> exceptionHook) {
+        this.exceptionHook = exceptionHook;
     }
 }
